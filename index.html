@@ -1,0 +1,384 @@
+<html>
+    <head>
+        <title>Rubik Cube</title>
+        <style>
+            body {overflow: hidden; margin: 0}
+            canvas {width: 100%; height: 100%}
+            button {margin: 20px}
+            .ui {position: absolute; right: 0px}
+        </style>
+    </head>
+    <body>
+        <div style="width:460px; height:250px; right:10px; top:10px; text-align:center; color:white; background:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)); border-radius: 25px" class="ui">
+            <label class="ui" style="top:10; right:185; font-size: 20; font-weight: bold; font-family: Verdana">Controls</label>
+            <label class="ui" style="top:60; right:325; color: red; font-weight: bold; font-family: Verdana">X Axis</label>
+            <button onclick="rotate(parentCubes[0], childrenCubes[0], deg90, 0, 0)" class="ui" style="top:60; right:350"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[0])" class="ui" style="top:82; right:338; font-family: Verdana">X-1</label>
+            <button onclick="rotate(parentCubes[0], childrenCubes[0], -deg90, 0, 0)" class="ui" style="top:60; right:290"> > </button>
+            <button onclick="rotate(parentCubes[1], childrenCubes[1], deg90, 0, 0)" class="ui" style="top:100; right:350"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[1])" class="ui" style="top:122; right:338; font-family: Verdana">X-2</label>
+            <button onclick="rotate(parentCubes[1], childrenCubes[1], -deg90, 0, 0)" class="ui" style="top:100; right:290"> > </button>
+            <button onclick="rotate(parentCubes[2], childrenCubes[2], deg90, 0, 0)" class="ui" style="top:140; right:350"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[2])" class="ui" style="top:162; right:338; font-family: Verdana">X-3</label>
+            <button onclick="rotate(parentCubes[2], childrenCubes[2], -deg90, 0, 0)" class="ui" style="top:140; right:290"> > </button>
+            
+            <label class="ui" style="top:60; right:205; color: green; font-weight: bold; font-family: Verdana">Y Axis</label>
+            <button onclick="rotate(parentCubes[3], childrenCubes[3], 0, -deg90, 0)" class="ui" style="top:60; right:230"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[3])" class="ui" style="top:82; right:218; font-family: Verdana">Y-1</label>
+            <button onclick="rotate(parentCubes[3], childrenCubes[3], 0, deg90, 0)" class="ui" style="top:60; right:170"> > </button>
+            <button onclick="rotate(parentCubes[4], childrenCubes[4], 0, -deg90, 0)" class="ui" style="top:100; right:230"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[4])" class="ui" style="top:122; right:218; font-family: Verdana">Y-2</label>
+            <button onclick="rotate(parentCubes[4], childrenCubes[4], 0, deg90, 0)" class="ui" style="top:100; right:170"> > </button>
+            <button onclick="rotate(parentCubes[5], childrenCubes[5], 0, -deg90, 0)" class="ui" style="top:140; right:230"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[5])" class="ui" style="top:162; right:218; font-family: Verdana">Y-3</label>
+            <button onclick="rotate(parentCubes[5], childrenCubes[5], 0, deg90, 0)" class="ui" style="top:140; right:170"> > </button>
+            
+            <label class="ui" style="top:60; right:85; color: blue; font-weight: bold; font-family: Verdana">Z Axis</label>
+            <button onclick="rotate(parentCubes[6], childrenCubes[6], 0, 0, deg90)" class="ui" style="top:60; right:110"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[6])" class="ui" style="top:82; right:98; font-family: Verdana">Z-1</label>
+            <button onclick="rotate(parentCubes[6], childrenCubes[6], 0, 0, -deg90)" class="ui" style="top:60; right:50"> > </button>
+            <button onclick="rotate(parentCubes[7], childrenCubes[7], 0, 0, deg90)" class="ui" style="top:100; right:110"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[7])" class="ui" style="top:122; right:98; font-family: Verdana">Z-2</label>
+            <button onclick="rotate(parentCubes[7], childrenCubes[7], 0, 0, -deg90)" class="ui" style="top:100; right:50"> > </button>
+            <button onclick="rotate(parentCubes[8], childrenCubes[8], 0, 0, deg90)" class="ui" style="top:140; right:110"> < </button>
+            <label onclick="highlightAxis(cubesHighlight[8])" class="ui" style="top:162; right:98; font-family: Verdana">Z-3</label>
+            <button onclick="rotate(parentCubes[8], childrenCubes[8], 0, 0, -deg90)" class="ui" style="top:140; right:50"> > </button>
+            
+            <button onclick="shuffle(50)" class="ui" style="top:180; right:182.5">Shuffle</button>
+        </div>
+
+        <script src="js/three.js"></script>
+        <script src="js/OrbitControls.js"></script>
+        
+        <script>
+            var scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xCCCCCC);
+            
+            var meshFloor1 = new THREE.Mesh(new THREE.PlaneGeometry(300, 300, 1, 1), new THREE.MeshPhongMaterial({color: 0xCCCCCC, wireframe:false}));
+            meshFloor1.rotation.x -= Math.PI/2;
+            meshFloor1.position.y -= 15;
+            meshFloor1.receiveShadow = true;
+            scene.add(meshFloor1);
+
+            var camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.set(8, 8, 8);
+            
+            var renderer = new THREE.WebGLRenderer({antialias: true});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.BasicShadowMap;
+            document.body.appendChild(renderer.domElement);
+                    
+            var axesHelper = new THREE.AxesHelper(15);
+            axesHelper.position.set(0, 0, 0);
+            scene.add(axesHelper);
+            
+            var ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.5);
+            scene.add(ambientLight);
+            
+            var pointLight = new THREE.PointLight(0xffffff, 1, 100);
+            pointLight.position.set(14, 14, 14);
+            pointLight.castShadow = true;
+            pointLight.shadow.mapSize.width = 1024;
+            pointLight.shadow.mapSize.height = 1024;
+            pointLight.shadow.camera.near = 500;
+            pointLight.shadow.camera.far = 4000;
+            pointLight.shadow.camera.fov = 30;
+            scene.add(pointLight);
+            
+            var controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.update();
+
+            window.addEventListener('resize', function()
+            {
+                var width = window.innerWidth;
+                var height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            })
+
+            var cubes = [];
+            var cubesCopy = [];
+            var parentCubes = [];
+            var childrenCubes = [];
+            var cubesHighlight = [];
+            var currentHex = [];
+            var size = 1;
+            var spacing = 0;
+            var deg90 = Math.PI / 2.0;
+            var center;
+            var randomCubes;
+            var randomRotation;
+            var currentColor;
+
+            createCubes();
+            gameLoop();
+
+            function defineParentsAndChildren()
+            {
+                parentCubes = 
+                [
+                    cubes[4],
+                    cubes[13],
+                    cubes[22],
+                    cubes[10],
+                    cubes[13],
+                    cubes[16],
+                    cubes[12],
+                    cubes[13],
+                    cubes[14]
+                ];
+                
+                childrenCubes = 
+                [
+                    [cubes[0],  cubes[1],  cubes[2],  cubes[3],  cubes[5],  cubes[6],  cubes[7],  cubes[8]],
+                    [cubes[9],  cubes[10], cubes[11], cubes[12], cubes[14], cubes[15], cubes[16], cubes[17]],
+                    [cubes[18], cubes[19], cubes[20], cubes[21], cubes[23], cubes[24], cubes[25], cubes[26]],
+                    [cubes[0],  cubes[1],  cubes[2],  cubes[9],  cubes[11], cubes[18], cubes[19], cubes[20]],
+                    [cubes[3],  cubes[4],  cubes[5],  cubes[12], cubes[14], cubes[21], cubes[22], cubes[23]],
+                    [cubes[6],  cubes[7],  cubes[8],  cubes[15], cubes[17], cubes[24], cubes[25], cubes[26]],
+                    [cubes[0],  cubes[3],  cubes[6],  cubes[9],  cubes[15], cubes[18], cubes[21], cubes[24]],
+                    [cubes[1],  cubes[4],  cubes[7],  cubes[10], cubes[16], cubes[19], cubes[22], cubes[25]],
+                    [cubes[2],  cubes[5],  cubes[8],  cubes[11], cubes[17], cubes[20], cubes[23], cubes[26]]
+                ];
+                
+                cubesHighlight = 
+                [
+                    [cubes[0],  cubes[1],  cubes[2],  cubes[3],  cubes[4], cubes[5],  cubes[6],  cubes[7],  cubes[8]],
+                    [cubes[9],  cubes[10], cubes[11], cubes[12], cubes[13], cubes[14], cubes[15], cubes[16], cubes[17]],
+                    [cubes[18], cubes[19], cubes[20], cubes[21], cubes[22], cubes[23], cubes[24], cubes[25], cubes[26]],
+                    [cubes[0],  cubes[1],  cubes[2],  cubes[9],  cubes[10], cubes[11], cubes[18], cubes[19], cubes[20]],
+                    [cubes[3],  cubes[4],  cubes[5],  cubes[12], cubes[13], cubes[14], cubes[21], cubes[22], cubes[23]],
+                    [cubes[6],  cubes[7],  cubes[8],  cubes[15], cubes[16], cubes[17], cubes[24], cubes[25], cubes[26]],
+                    [cubes[0],  cubes[3],  cubes[6],  cubes[9],  cubes[12], cubes[15], cubes[18], cubes[21], cubes[24]],
+                    [cubes[1],  cubes[4],  cubes[7],  cubes[10], cubes[13], cubes[16], cubes[19], cubes[22], cubes[25]],
+                    [cubes[2],  cubes[5],  cubes[8],  cubes[11], cubes[14], cubes[17], cubes[20], cubes[23], cubes[26]]
+                ];
+            }
+
+            function addCube(x, y, z)
+            {
+                var cubeGeometry = new THREE.BoxGeometry(size, size, size);
+
+                cubeGeometry.faces[0] .color.setHex(0xCC0000);
+                cubeGeometry.faces[1] .color.setHex(0xCC0000);
+                cubeGeometry.faces[2] .color.setHex(0xFF6600);
+                cubeGeometry.faces[3] .color.setHex(0xFF6600);
+                cubeGeometry.faces[4] .color.setHex(0xFFFFFF);
+                cubeGeometry.faces[5] .color.setHex(0xFFFFFF);
+                cubeGeometry.faces[6] .color.setHex(0x004D99);
+                cubeGeometry.faces[7] .color.setHex(0x004D99);
+                cubeGeometry.faces[8] .color.setHex(0x006600);
+                cubeGeometry.faces[9] .color.setHex(0x006600);
+                cubeGeometry.faces[10].color.setHex(0xFFFF00);
+                cubeGeometry.faces[11].color.setHex(0xFFFF00);
+                
+                var material = new THREE.MeshPhongMaterial({shininess: 150, vertexColors: THREE.FaceColors});
+                var cube = new THREE.Mesh(cubeGeometry, material);
+                
+                cube.geometry.colorsNeedUpdate = true;
+
+                var edgeGeometry = new THREE.EdgesGeometry(cube.geometry);
+                var edgeMaterial = new THREE.LineBasicMaterial({color: 0x000000, linewidth: 1});
+                var edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+                            
+                cube.position.x = x;
+                cube.position.y = y;
+                cube.position.z = z;
+                
+                cube.receiveShadow = true;
+                cube.castShadow = true;
+                
+                cube.add(edges);
+                scene.add(cube);
+                cubes.push(cube);
+            }
+
+            function createCubes()
+            {
+                for (var i=-1; i<=1; i++)
+                {
+                    for (var j=-1; j<=1; j++)
+                    {
+                        for (var k=-1; k<=1; k++)
+                        {
+                            var x = i * (size + spacing);
+                            var y = j * (size + spacing);
+                            var z = k * (size + spacing);
+                            
+                            addCube(x, y, z);
+                        }                
+                    }
+                }
+                
+                defineParentsAndChildren();
+            }        
+
+            function rearrangeArrays()
+            {
+                resetPositions();
+                
+                for (var i=-1; i<=1; i++)
+                {
+                    for (var j=-1; j<=1; j++)
+                    {
+                        for (var k=-1; k<=1; k++)
+                        {
+                            for (var l=0; l<cubes.length; l++)
+                            {
+                                cubes[l].position.x = Math.round(cubes[l].position.x);
+                                cubes[l].position.y = Math.round(cubes[l].position.y);
+                                cubes[l].position.z = Math.round(cubes[l].position.z);
+                                
+                                if (cubes[l].position.x == i && cubes[l].position.y == j && cubes[l].position.z == k)
+                                {
+                                    cubesCopy.push(cubes[l]);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                cubes = [];
+                cubes = cubesCopy;
+                cubesCopy = [];
+                
+                defineParentsAndChildren();
+            }
+
+            function resetPositions()
+            {
+                for (var i=0; i<cubes.length; i++)
+                {
+                    cubes[i].updateMatrix();
+                    cubes[i].geometry.applyMatrix(cubes[i].matrix);
+                    
+                    center = new THREE.Vector3();
+                    cubes[i].geometry.computeBoundingBox();
+                    cubes[i].geometry.boundingBox.getCenter(center);
+                    cubes[i].geometry.center();
+                    cubes[i].position.copy(center);
+
+                    cubes[i].rotation.set(0, 0, 0);
+                    cubes[i].scale.set(1, 1, 1);
+                    cubes[i].updateMatrix();
+                    scene.updateMatrix();
+                }
+            }
+
+            function rotate(parentCube, childrenCubeArray, rotationX, rotationY, rotationZ)
+            {
+                for (var cube of childrenCubeArray)
+                {
+                    parentCube.attach(cube);
+                }
+
+                parentCube.rotation.x += rotationX;
+                parentCube.rotation.y += rotationY;
+                parentCube.rotation.z += rotationZ;
+                
+                for (var cube of childrenCubeArray)
+                {
+                    scene.attach(cube);
+                }
+    
+                rearrangeArrays();
+            }
+
+            async function highlightAxis(cubesToHighlight)
+            {
+                for (var cube of cubesToHighlight)
+                {
+                    for (var i=0; i<cube.geometry.faces.length; i++)
+                    {
+                        currentHex[i] = cube.geometry.faces[i].color.getHex();
+                        cube.geometry.faces[i].color.setHex(0xE645FF);
+                        cube.geometry.colorsNeedUpdate = true;
+                    }
+                }
+                
+                await sleep(200);
+                
+                for (var cube of cubesToHighlight)
+                {
+                    for (var i=0; i<cube.geometry.faces.length; i++)
+                    {
+                        cube.geometry.faces[i].color.setHex(currentHex[i]);
+                        cube.geometry.colorsNeedUpdate = true;
+                    }
+                }
+            }
+
+            function sleep(ms)
+            {
+                return new Promise
+                (
+                    resolve => setTimeout(resolve, ms)
+                );
+            }
+
+            async function shuffle(numberOfMoves)
+            {
+                for (var i = 0; i<numberOfMoves; i++)
+                {
+                    randomCubes = Math.floor(Math.random() * parentCubes.length);
+                    randomRotation = Math.round(Math.random());
+
+                    if (randomRotation == 0)
+                        randomRotation = -deg90;
+                    else if (randomRotation == 1)
+                        randomRotation = deg90;
+                    
+                        switch (randomCubes)
+                        {
+                            case 0:
+                                rotate(parentCubes[0], childrenCubes[0], randomRotation, 0, 0);
+                                break;
+                            
+                            case 1:
+                                rotate(parentCubes[1], childrenCubes[1], randomRotation, 0, 0);
+                                break;
+                            
+                            case 2:
+                                rotate(parentCubes[2], childrenCubes[2], randomRotation, 0, 0);
+                                break;
+                            
+                            case 3:
+                                rotate(parentCubes[3], childrenCubes[3], 0, randomRotation, 0);
+                                break;
+                            
+                            case 4:
+                                rotate(parentCubes[4], childrenCubes[4], 0, randomRotation, 0);
+                                break;
+                            
+                            case 5:
+                                rotate(parentCubes[5], childrenCubes[5], 0, randomRotation, 0);
+                                break;
+                            
+                            case 6:
+                                rotate(parentCubes[6], childrenCubes[6], 0, 0, randomRotation);
+                                break;
+                            
+                            case 7:
+                                rotate(parentCubes[7], childrenCubes[7], 0, 0, randomRotation);
+                                break;
+                            
+                            case 8:
+                                rotate(parentCubes[8], childrenCubes[8], 0, 0, randomRotation);
+                                break;
+                        }
+                        
+                    await sleep(100);
+                }
+            }
+
+            function gameLoop()
+            {
+                requestAnimationFrame(gameLoop);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+        </script>
+    </body>
+</html>
